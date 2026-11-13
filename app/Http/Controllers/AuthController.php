@@ -52,10 +52,13 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users,email',
-            'phone'    => 'required|string|max:20',
-            'password' => 'required|string|min:8|confirmed',    
+            'name'                  => 'required|string|max:255',
+            'fullname'              => 'required|string|max:255',
+            'place'                 => 'required|string|max:255',
+            'date_of_birth'         => 'required|date',
+            'phone'                 => 'required|string|max:20',
+            'email'                 => 'required|string|email|max:255|unique:users,email',
+            'password'              => 'required|string|min:8|confirmed',
         ]);
 
         if ($validator->fails()) {
@@ -67,11 +70,14 @@ class AuthController extends Controller
         }
 
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'phone'    => $request->phone,
-            'role'     => 'user',
-            'password' => $request->password,
+            'name'          => $request->name,
+            'fullname'      => $request->fullname,
+            'place'         => $request->place,
+            'date_of_birth' => $request->date_of_birth,
+            'phone'         => $request->phone,
+            'email'         => $request->email,
+            'role'          => 'user',
+            'password'      => $request->password, 
         ]);
 
         $token = $user->createToken('auth_token', ['user'])->plainTextToken;
