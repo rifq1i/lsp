@@ -21,5 +21,15 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        User::updateOrCreate(
+        ['email' => 'superadmin@lsp.com'],
+        [
+            'name'     => 'Super Admin LSP',
+            'phone'    => '081234567890',
+            'role'     => 'super_admin',
+            'password' => 'password123',
+        ]
+    );
     }
 }

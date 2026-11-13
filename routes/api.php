@@ -8,6 +8,14 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::prefix('user')->group(function (){
-    Route::resource('user', AuthController::class);
+Route::prefix('auth')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);   
+    Route::post('/register', [AuthController::class, 'register']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', [AuthController::class, 'me']);
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+    Route::post('/admin/register', [AuthController::class, 'registerAdmin']);
 });
