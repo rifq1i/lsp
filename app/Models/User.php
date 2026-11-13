@@ -32,6 +32,11 @@ class User extends Authenticatable
         'phone'
     ];
 
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
     protected $table = 'users';
 
     protected function casts(): array
@@ -40,5 +45,18 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+    public function isUser(): bool
+    {
+        return $this->role === 'user';
     }
 }
