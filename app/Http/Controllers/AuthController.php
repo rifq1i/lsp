@@ -126,7 +126,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-    public function me(Request $request)
+    public function historyLogin(Request $request)
     {
         return response()->json([
             'success' => true,
