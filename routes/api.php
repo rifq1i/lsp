@@ -29,5 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/pre-assessment', [CertificationController::class, 'setPreAssessment']); // Hari 4: Set Jadwal & Pra Asesmen (Status: Assesor / Pra_Assesment)
         Route::post('/{id}/approve-assessment', [CertificationController::class, 'approveAssessmentByPeserta']); // Hari 5: Isi Kuesioner (Status: Assesment)
         Route::post('/{id}/final-decision', [CertificationController::class, 'submitFinalDecision']); // Hari 6-7: Keputusan & Terbit SKK (Status: Assesor_Yes / Assesor_No)
+        Route::post('/apl-01', [CertificationController::class, 'submitApl01']);
+        Route::get('/{id}/download/{docType}', [CertificationController::class, 'downloadPdf']);
     });
 });

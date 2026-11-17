@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Certification;
+use App\Services\DocumentTemplateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -271,5 +272,114 @@ class CertificationController extends Controller
                 : 'Peserta dinyatakan BELUM KOMPETEN (Assesor_No).',
             'data'    => $certification
         ], 200);
+    }
+
+    public function submitApl01(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'jenis_kelamin'       => 'required|in:Laki-laki,Wanita',
+            'kebangsaan'          => 'nullable|string',
+            'alamat_rumah'        => 'required|string',
+            'kode_pos_rumah'      => 'nullable|string|max:10',
+            'pendidikan_terakhir' => 'required|string',
+            'nama_perusahaan'     => 'nullable|string',
+            'jabatan'             => 'nullable|string',
+            'alamat_kantor'       => 'nullable|string',
+            'judul_skema'         => 'required|string',
+            'nomor_skema'         => 'required|string',
+            'tujuan_asesmen'      => 'required|in:Sertifikasi,Sertifikasi Ulang',
+            'unit_kompetensi'     => 'required|array|min:1',
+            'unit_kompetensi.*.kode_unit'     => 'required|string',
+            'unit_kompetensi.*.judul_unit'    => 'required|string',
+            'unit_kompetensi.*.jenis_standar' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi FR-APL-01 gagal',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        $cert = Certification::create([
+            'user_id'             => $request->user()->id,
+            'id_izin'             => 'APL-' . strtoupper(Str::random(8)),
+            'jenis_kelamin'       => $request->jenis_kelamin,
+            'kebangsaan'          => $request->kebangsaan ?? 'Indonesia',
+            'alamat_rumah'        => $request->alamat_rumah,
+            'kode_pos_rumah'      => $request->kode_pos_rumah,
+            'telp_rumah'          => $request->telp_rumah,
+            'telp_kantor_pribadi' => $request->telp_kantor_pribadi,
+            'pendidikan_terakhir' => $request->pendidikan_terakhir,
+            'nama_perusahaan'     => $request->nama_perusahaan,
+            'jabatan'             => $request->jabatan,
+            'alamat_kantor'       => $request->alamat_kantor,
+            'kode_pos_kantor'     => $request->kode_pos_kantor,
+            'telp_perusahaan'     => $request->telp_perusahaan,
+            'fax_perusahaan'      => $request->fax_perusahaan,
+            'email_perusahaan'    => $request->email_perusahaan,
+            'judul_skema'         => $request->judul_skema,
+            'nomor_skema'         => $request->nomor_skema,
+            'tujuan_asesmen'      => $request->tujuan_asesmen,
+            'unit_kompetensi'     => $request->unit_kompetensi,
+            'status'              => 'Pemohon',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data FR-APL-01 berhasil disimpan dengan status Pemohon.',
+            'data'    => $cert
+        ], 201);
+    }
+
+    public function downloadPdf(Request $request, $id, $docType, DocumentTemplateService $docService)
+    {
+        $cert = Certification::with('user')->findOrFail($id);
+
+        // Hanya pemilik dokumen atau Admin/Super Admin yang boleh mendownload
+        if ($request->user()->role === 'user' && $cert->user_id !== $request->user()->id) {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
+        try {
+            $pdfPath = $docService->generatePdfFromTemplate($cert, strtoupper($docType));
+
+            return response()->download($pdfPath, "{$docType}_{$cert->id_izin}.pdf", [
+                'Content-Type' => 'application/pdf',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+}
+
+
+/**
+ * Endpoint untuk Generate & Download PDF
+ */
+public function downloadPdf(Request $request, $id, $docType, DocumentTemplateService $docService)
+{
+    $cert = Certification::with('user')->findOrFail($id);
+
+    // Hanya pemilik dokumen atau Admin/Super Admin yang boleh download
+    if ($request->user()->role === 'user' && $cert->user_id !== $request->user()->id) {
+        return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+    }
+
+    try {
+        $pdfPath = $docService->generatePdfFromTemplate($cert, strtoupper($docType));
+
+        return response()->download($pdfPath, "{$docType}_{$cert->id_izin}.pdf", [
+            'Content-Type' => 'application/pdf',
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
     }
 }
