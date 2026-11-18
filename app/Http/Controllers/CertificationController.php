@@ -356,30 +356,3 @@ class CertificationController extends Controller
         }
     }
 }
-
-
-/**
- * Endpoint untuk Generate & Download PDF
- */
-public function downloadPdf(Request $request, $id, $docType, DocumentTemplateService $docService)
-{
-    $cert = Certification::with('user')->findOrFail($id);
-
-    // Hanya pemilik dokumen atau Admin/Super Admin yang boleh download
-    if ($request->user()->role === 'user' && $cert->user_id !== $request->user()->id) {
-        return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
-    }
-
-    try {
-        $pdfPath = $docService->generatePdfFromTemplate($cert, strtoupper($docType));
-
-        return response()->download($pdfPath, "{$docType}_{$cert->id_izin}.pdf", [
-            'Content-Type' => 'application/pdf',
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 500);
-    }
-}
