@@ -3,25 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required | email',
-            'password' => 'required | string',
-            'device_name' => 'nullable | string',
+            'email'       => 'required|email',
+            'password'    => 'required|string',
+            'device_name' => 'nullable|string|max:100',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi Gagal',
-                'errors' => $validator->errors(),
+                'message' => 'Validasi gagal',
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
@@ -30,12 +31,11 @@ class AuthController extends Controller
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Email atau Password Salah',
+                'message' => 'Email atau password salah',
             ], 401);
         }
 
         $deviceName = $request->device_name ?? 'auth_token';
-
         $token = $user->createToken($deviceName, [$user->role])->plainTextToken;
 
         return response()->json([
@@ -45,27 +45,60 @@ class AuthController extends Controller
                 'user'       => $user,
                 'token'      => $token,
                 'token_type' => 'Bearer',
-            ]
+            ],
         ], 200);
     }
 
-    public function register(Request $request)
+    public function registerUser(Request $request): JsonResponse
+    {
+        return $this->createAccountByRole($request, 'user', true);
+    }
+
+    public function registerAdmin(Request $request): JsonResponse
+    {
+        return $this->createAccountByRole($request, 'admin', false);
+    }
+
+    public function registerSuperAdmin(Request $request): JsonResponse
+    {
+        return $this->createAccountByRole($request, 'super_admin', false);
+    }
+
+    public function historyLogin(Request $request): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data'    => $request->user(),
+        ], 200);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logout berhasil',
+        ], 200);
+    }
+
+    private function createAccountByRole(Request $request, string $role, bool $issueToken): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'name'                  => 'required|string|max:255',
-            'fullname'              => 'required|string|max:255',
-            'place'                 => 'required|string|max:255',
-            'date_of_birth'         => 'required|date',
-            'phone'                 => 'required|string|max:20',
-            'email'                 => 'required|string|email|max:255|unique:users,email',
-            'password'              => 'required|string|min:8|confirmed',
+            'name'          => 'required|string|max:255',
+            'fullname'      => 'required|string|max:255',
+            'place'         => 'required|string|max:255',
+            'date_of_birth' => 'required|date',
+            'phone'         => 'required|string|max:20',
+            'email'         => 'required|string|email|max:255|unique:users,email',
+            'password'      => 'required|string|min:8|confirmed',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi registrasi gagal',
-                'errors'  => $validator->errors()
+                'message' => 'Validasi registrasi ' . $role . ' gagal',
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
@@ -76,77 +109,21 @@ class AuthController extends Controller
             'date_of_birth' => $request->date_of_birth,
             'phone'         => $request->phone,
             'email'         => $request->email,
-            'role'          => 'user',
-            'password'      => $request->password, 
+            'role'          => $role,
+            'password'      => $request->password,
         ]);
 
-        $token = $user->createToken('auth_token', ['user'])->plainTextToken;
+        $payload = ['user' => $user];
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Registrasi user berhasil',
-            'data'    => [
-                'user'       => $user,
-                'token'      => $token,
-                'token_type' => 'Bearer',
-            ]
-        ], 201);
-    }
-
-    public function registerAdmin(Request $request)
-    {
-        if (!$request->user() || !$request->user()->isSuperAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Akses ditolak. Hanya Super Admin yang dapat mendaftarkan Admin baru.'
-            ], 403);
+        if ($issueToken) {
+            $payload['token'] = $user->createToken('auth_token', [$role])->plainTextToken;
+            $payload['token_type'] = 'Bearer';
         }
 
-        $validator = Validator::make($request->all(), [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|email|max:255|unique:users,email',
-            'phone'    => 'required|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi registrasi admin gagal',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
-
-        $admin = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'phone'    => $request->phone,
-            'role'     => 'admin', 
-            'password' => $request->password,
-        ]);
-
         return response()->json([
             'success' => true,
-            'message' => 'Akun Admin berhasil didaftarkan oleh Super Admin',
-            'data'    => $admin
+            'message' => 'Registrasi ' . $role . ' berhasil',
+            'data'    => $payload,
         ], 201);
-    }
-
-    public function historyLogin(Request $request)
-    {
-        return response()->json([
-            'success' => true,
-            'data'    => $request->user()
-        ], 200);
-    }
-
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Logout berhasil'
-        ], 200);
     }
 }
