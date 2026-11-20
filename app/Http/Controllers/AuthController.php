@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage; // Tambahkan ini untuk akses Storage
 
 class AuthController extends Controller
 {
@@ -85,13 +86,16 @@ class AuthController extends Controller
     private function createAccountByRole(Request $request, string $role, bool $issueToken): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'name'          => 'required|string|max:255',
-            'fullname'      => 'required|string|max:255',
-            'place'         => 'required|string|max:255',
-            'date_of_birth' => 'required|date',
-            'phone'         => 'required|string|max:20',
-            'email'         => 'required|string|email|max:255|unique:users,email',
-            'password'      => 'required|string|min:8|confirmed',
+            'name'             => 'required|string|max:255',
+            'fullname'         => 'required|string|max:255',
+            'place'            => 'required|string|max:255',
+            'date_of_birth'    => 'required|date',
+            'phone'            => 'required|string|max:20',
+            'email'            => 'required|string|email|max:255|unique:users,email',
+            'password'         => 'required|string|min:8|confirmed',
+            // Tambahan validasi untuk TTD
+            'signature'        => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
+            'signature_base64' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -102,15 +106,35 @@ class AuthController extends Controller
             ], 422);
         }
 
+        // --- PROSES TANDA TANGAN ---
+        $signaturePath = null;
+
+        // 1. Jika dikirim dari React Canvas via Base64
+        if ($request->filled('signature_base64')) {
+            $image_parts = explode(";base64,", $request->signature_base64);
+            
+            if (count($image_parts) == 2) {
+                $image_base64 = base64_decode($image_parts[1]);
+                $signaturePath = 'signatures/sig_' . time() . '_' . uniqid() . '.png';
+                Storage::disk('public')->put($signaturePath, $image_base64);
+            }
+        } 
+        // 2. Jika dikirim via File Upload biasa
+        else if ($request->hasFile('signature')) {
+            $signaturePath = $request->file('signature')->store('signatures', 'public');
+        }
+        // ---------------------------
+
         $user = User::create([
-            'name'          => $request->name,
-            'fullname'      => $request->fullname,
-            'place'         => $request->place,
-            'date_of_birth' => $request->date_of_birth,
-            'phone'         => $request->phone,
-            'email'         => $request->email,
-            'role'          => $role,
-            'password'      => $request->password,
+            'name'           => $request->name,
+            'fullname'       => $request->fullname,
+            'place'          => $request->place,
+            'date_of_birth'  => $request->date_of_birth,
+            'phone'          => $request->phone,
+            'email'          => $request->email,
+            'role'           => $role,
+            'password'       => $request->password, // Mutator Hash otomatis bekerja kalau sudah di-set di Model, jika belum, gunakan Hash::make()
+            'signature_path' => $signaturePath, // Simpan path TTD ke database
         ]);
 
         $payload = ['user' => $user];

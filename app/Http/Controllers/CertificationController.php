@@ -14,6 +14,8 @@ use setasign\Fpdi\Fpdi;
 
 class CertificationController extends Controller
 {
+
+    protected $documentService;
     public function index(Request $request)
     {
         $user = $request->user();
@@ -360,6 +362,7 @@ class CertificationController extends Controller
             'message' => 'Data FR-APL-01 berhasil disimpan dengan status Pemohon.',
             'data'    => $cert
         ], 201);
+        
     }
 
     public function downloadPdf($id, $jenis_dokumen)
