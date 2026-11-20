@@ -2,7 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CertificationController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\SignatureController;
+use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -13,6 +14,7 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'historyLogin']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::post('/user/signature', [SignatureController::class, 'upload']);
 
     Route::prefix('certifications')->group(function () {
         Route::get('/', [CertificationController::class, 'index']);
@@ -22,6 +24,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:super_admin')->prefix('super-admin')->group(function () {
         Route::post('/register-admin', [AuthController::class, 'registerAdmin']);
         Route::post('/register-super-admin', [AuthController::class, 'registerSuperAdmin']);
+
+        Route::prefix('users')->group(function () {
+            Route::get('/', [UserManagementController::class, 'index']);
+            Route::get('/{id}', [UserManagementController::class, 'show']);
+            Route::put('/{id}', [UserManagementController::class, 'update']);
+            Route::delete('/{id}', [UserManagementController::class, 'destroy']);
+        });
     });
 
     Route::middleware('role:admin,super_admin')->prefix('certifications')->group(function () {
