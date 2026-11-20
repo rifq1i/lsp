@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('id_izin')->unique();
             $table->enum('jenis_permohonan', ['mitra', 'langsung'])->default('mitra');
+            $table->string('jenjang')->nullable();
 
             $table->string('jenis_kelamin')->nullable();
             $table->string('kebangsaan')->default('Indonesia');
