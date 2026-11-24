@@ -155,3 +155,28 @@ Field yang divalidasi: `judul_skema`, `skema_sertifikasi`, `jenis_kelamin` (masi
 4. Jika menerima kode **401**, arahkan pengguna ke halaman login.
 5. Jika menerima kode **422**, tampilkan pesan dari objek `errors` di bawah field yang bersangkutan.
 6. Jika menerima kode **500**, itu bug di sisi backend (bukan salah frontend), silakan laporkan.
+
+## 8. Status Keamanan dan Verifikasi (Per 24 Nov 2026)
+
+Status setelah perbaikan dari Adis masuk lewat merge `origin/main`.
+
+| Hal | Status |
+|---|---|
+| Akses data milik orang lain (`submit-apl`, `pay`, `approve-apl`, `approve-assessment`, PDF) | Sudah diperbaiki. Hasil uji tim: ditolak dengan 403 atau 404 |
+| Kolom database alur sertifikasi (`apl_01_data`, `bukti_bayar`, `lunas_at`, dan lainnya) | Sudah ada. Error 500 pada `submit-apl` dan `pay` sebelumnya sudah tidak terjadi |
+| Pembatasan role (`user`, `admin`, `super_admin`) | Sudah berjalan lewat `RoleMiddleware` |
+| Register tidak bisa menyelipkan `role` | Terverifikasi lewat `uji-auth.sh` |
+
+**Catatan untuk frontend:** `POST /certifications/{id}/pay` saat ini hanya menyimpan bukti bayar. Status `Lunas` diubah oleh Admin, jadi jangan menampilkan "Lunas" setelah pemohon mengunggah bukti.
+
+**Masih terbuka (backend):**
+- Body request `approve-apl`, `approve-assessment`, `verify-admin`, `pre-assessment`, `final-decision` belum didokumentasikan.
+- Aturan waktu otomatis (batal setelah 1×24 jam atau 5 hari kerja) dan notifikasi WhatsApp belum diimplementasikan.
+
+## 9. Akun Development
+
+Hanya untuk pengujian lokal setelah `php artisan migrate:fresh --seed`. **Ganti atau hapus sebelum dipakai sungguhan.**
+
+| Role | Email | Password |
+|---|---|---|
+| `super_admin` | `superadmin@lsp.com` | `password123` |
