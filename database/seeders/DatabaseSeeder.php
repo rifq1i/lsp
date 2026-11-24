@@ -33,7 +33,7 @@ class DatabaseSeeder extends Seeder
                 'date_of_birth' => '1995-01-01',
                 'phone'         => '081234567890',
                 'role'          => 'super_admin',
-                'password'      => Hash::make('password123'),
+                'password'      => Hash::make(env('SEED_SUPERADMIN_PASSWORD', 'ganti-password-ini')),
                 'email_verified_at' => now(),
             ]
     );

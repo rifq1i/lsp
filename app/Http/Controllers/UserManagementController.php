@@ -54,7 +54,7 @@ class UserManagementController extends Controller
             'date_of_birth' => 'sometimes|required|date',
             'phone'         => 'sometimes|required|string|max:20',
             'email'         => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'role'          => 'sometimes|required|in:user,admin,super_admin',
+            'role'          => 'sometimes|required|in:user,mitra,asesor,admin,super_admin',
             'password'      => 'nullable|string|min:8|confirmed',
         ]);
 
