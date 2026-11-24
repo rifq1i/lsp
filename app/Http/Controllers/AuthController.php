@@ -60,6 +60,16 @@ class AuthController extends Controller
         return $this->createAccountByRole($request, 'admin', false);
     }
 
+    public function registerMitra(Request $request): JsonResponse
+    {
+        return $this->createAccountByRole($request, 'mitra', false);
+    }
+
+    public function registerAsesor(Request $request): JsonResponse
+    {
+        return $this->createAccountByRole($request, 'asesor', false);
+    }
+
     public function registerSuperAdmin(Request $request): JsonResponse
     {
         return $this->createAccountByRole($request, 'super_admin', false);
@@ -92,6 +102,8 @@ class AuthController extends Controller
             'date_of_birth'    => 'required|date',
             'phone'            => 'required|string|max:20',
             'email'            => 'required|string|email|max:255|unique:users,email',
+            'nik'              => 'nullable|string|max:32',
+            'no_reg_asesor'    => 'nullable|string|max:64',
             'password'         => 'required|string|min:8|confirmed',
             // Tambahan validasi untuk TTD
             'signature'        => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
@@ -128,6 +140,8 @@ class AuthController extends Controller
         $user = User::create([
             'name'           => $request->name,
             'fullname'       => $request->fullname,
+            'nik'            => $request->nik,
+            'no_reg_asesor'  => $request->no_reg_asesor,
             'place'          => $request->place,
             'date_of_birth'  => $request->date_of_birth,
             'phone'          => $request->phone,

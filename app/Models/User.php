@@ -24,6 +24,9 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'fullname',
+        'nik',
+        'no_reg_asesor',
+        'signature_path',
         'place',
         'date_of_birth',
         'phone',
@@ -54,6 +57,14 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+    public function isMitra(): bool
+    {
+        return $this->role === 'mitra';
+    }
+    public function isAsesor(): bool
+    {
+        return $this->role === 'asesor';
     }
     public function isUser(): bool
     {
